@@ -7,9 +7,22 @@ import morgan from "morgan";
 import tracksRouter from "#api/tracks";
 import playlistsRouter from "#api/playlists";
 
+// Import the registration and login routes
+import usersRouter from "#api/users";
+
+// Import middleware that gets the user from a token
+import getUserFromToken from "#middleware/getUserFromToken";
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+
+// Attach the user to the request if a valid token is provided
+app.use(getUserFromToken);
+
+// Register the user routes
+app.use("/users", usersRouter);
 
 app.use("/tracks", tracksRouter);
 app.use("/playlists", playlistsRouter);

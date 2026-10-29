@@ -10,8 +10,16 @@ import {
 import { createPlaylistTrack } from "#db/queries/playlists_tracks";
 import { getTracksByPlaylistId } from "#db/queries/tracks";
 
+// Import  middleware that requires a logged-in user
+import requireUser from "#middleware/requireUser";
+
+// Require login for all playlist routes
+router.use(requireUser);
+
 router.get("/", async (req, res) => {
-  const playlists = await getPlaylists();
+
+  // Get only the logged-in user's playlists
+  const playlists = await getPlaylists(req.user.id);
   res.send(playlists);
 });
 
@@ -22,13 +30,18 @@ router.post("/", async (req, res) => {
   if (!name || !description)
     return res.status(400).send("Request body requires: name, description");
 
-  const playlist = await createPlaylist(name, description);
+  // Create a playlist owned by the logged-in user
+  const playlist = await createPlaylist(name, description,req.user.id);
   res.status(201).send(playlist);
 });
 
 router.param("id", async (req, res, next, id) => {
   const playlist = await getPlaylistById(id);
   if (!playlist) return res.status(404).send("Playlist not found.");
+
+  // Only allow the owner to access this playlist
+  if (playlist.user_id !== req.user.id)
+  return res.status(403).send("Forbidden");
 
   req.playlist = playlist;
   next();
